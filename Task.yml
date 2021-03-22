@@ -1,0 +1,45 @@
+- hosts: all
+  tasks:
+  - name: yum repository creation
+    yum_repository:
+            name: docker
+            gpgcheck: no
+            description: docker repo
+            baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+  - name: Installing python3
+    package:
+            name: python3
+            state: present
+  - name: Installing docker-py
+    pip:
+            name: docker-py
+  - name: Installing docker
+    command: "yum install docker-ce --nobest -y"
+  - name: Starting docker services
+    service:
+            name: docker
+            state: started
+            enabled: yes
+  - name: Pulling docker image httpd
+    docker_image:
+            name: httpd
+  - name: Stopping firewalld
+    service:
+            name: firewalld
+            state: stopped
+
+  - copy: 
+            content: "This is hi from container web!"
+            dest: "/var/www/html/index.html"
+
+  - name: Running docker container
+    docker_container:
+            name: web
+            image: httpd
+            state: started
+            volumes:
+                    - /var/www/html:/usr/local/apache2/htdocs/
+            exposed_ports:
+                    - "80"
+            ports:
+		                - "8080:80"	
